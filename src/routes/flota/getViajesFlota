@@ -1,0 +1,33 @@
+const { sql, poolPromise } = require('../../../db');
+
+module.exports = async (req, res) => {
+    try {
+        const body = req.body || {};
+
+        const filtro = body.filtro !== undefined ? parseInt(body.filtro, 10) : 0;
+        const filtroCalle = body.filtroCalle !== undefined ? parseInt(body.filtroCalle, 10) : 1;
+        const nroFlota = body.nroFlota !== undefined ? parseInt(body.nroFlota, 10) : 0;
+        const choferViaja = body.choferViaja !== undefined ? parseInt(body.choferViaja, 10) : 1;
+        const filtroMesas = body.filtroMesas || '';
+
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .input('Filtro', sql.Int, filtro)
+            .input('FiltroCalle', sql.Int, filtroCalle)
+            .input('NroFlota', sql.Int, nroFlota)
+            .input('ChoferViaja', sql.Int, choferViaja)
+            .input('FiltroMesas', sql.VarChar(sql.MAX), filtroMesas)
+            .execute('dbo.CFR_GetViajesFlota');
+
+        res.json({
+            success: true,
+            data: result.recordset
+        });
+    } catch (err) {
+        console.error('Error getViajesFlota: ', err);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor al procesar los viajes'
+        });
+    }
+};
