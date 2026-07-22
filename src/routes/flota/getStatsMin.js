@@ -2,8 +2,13 @@ const { sql, poolPromise } = require('../../../db');
 
 module.exports = async (req, res) => {
     try {
-        const body = req.body || {};
-        const list = body.list !== undefined ? body.list : ''; // El filtro de mesas separadas por comas
+        const user = req.user || {};
+        
+        // Formatear mesas concatenadas por comas (ej: "15" -> "1,5")
+        let list = '';
+        if (user.nro_mesas && user.nro_mesas !== '0') {
+            list = String(user.nro_mesas).split('').join(',');
+        }
 
         const pool = await poolPromise;
         const result = await pool.request()

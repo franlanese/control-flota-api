@@ -5,7 +5,8 @@ module.exports = async (req, res) => {
         const body = req.body || {};
         const nroViaje = body.nro_viaje;
         const accion = body.accion;
-        const usuario = body.usuario !== undefined ? body.usuario : 1; // Fallback a 1 si no se provee
+        const user = req.user || {};
+        const usuario = user.userId !== undefined ? parseInt(user.userId, 10) : 1; // Fallback a 1 si no se provee
 
         if (nroViaje === undefined || nroViaje === null || !accion) {
             return res.status(400).json({
@@ -14,12 +15,21 @@ module.exports = async (req, res) => {
             });
         }
 
+        let cleanAccion = String(accion).trim();
+        if (cleanAccion === 'anular') {
+            cleanAccion = 'anul';
+        } else if (cleanAccion === 'finalizar') {
+            cleanAccion = 'fina';
+        } else {
+            cleanAccion = cleanAccion.substring(0, 5);
+        }
+
         const pool = await poolPromise;
         await pool.request()
             .input('IdViaje', sql.Int, nroViaje)
-            .input('Accion', sql.VarChar(50), accion)
-            .input('Usuario', sql.Int, usuario)
-            .execute('dbo.Eventos_acciones');
+            .input('Accion', sql.VarChar(5), cleanAccion)
+            .input('Usuario', sql.SmallInt, usuario)
+            .execute('dbo.CFR_Eventos_acciones');
 
         res.json({
             success: true,

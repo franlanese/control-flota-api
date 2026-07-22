@@ -4,8 +4,10 @@ module.exports = async (req, res) => {
     try {
         const body = req.body || {};
 
+        const user = req.user || {};
+
         // Identificador del usuario logueado activo
-        const userId = body.userId !== undefined ? parseInt(body.userId, 10) : 1; // Fallback a usuario ID 1
+        const userId = user.userId !== undefined ? parseInt(user.userId, 10) : 1; 
 
         const pool = await poolPromise;
         await pool.request()

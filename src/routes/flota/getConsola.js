@@ -4,9 +4,19 @@ module.exports = async (req, res) => {
     try {
         const body = req.body || {};
 
-        // Parámetros de contexto
-        const userId = body.userId !== undefined ? parseInt(body.userId, 10) : 1; // Fallback a usuario ID 1
-        const filtroMesas = body.filtroMesas || '';
+        const user = req.user || {};
+
+        // Parámetros de contexto del operador
+        const userId = user.userId !== undefined ? parseInt(user.userId, 10) : 1; 
+        let filtroMesas = '';
+        if (user.nro_mesas && user.nro_mesas !== '0') {
+            const mesas = String(user.nro_mesas).split('');
+            filtroMesas = ' AND (nro_canal_comunicaciones = 0';
+            for (const mesa of mesas) {
+                filtroMesas += ` OR nro_canal_comunicaciones in (SELECT NroCanal from Mesas where NroMesa = ${parseInt(mesa, 10)})`;
+            }
+            filtroMesas += ')';
+        }
 
         const pool = await poolPromise;
         const result = await pool.request()

@@ -3,8 +3,9 @@ const { sql, poolPromise } = require('../../../db');
 module.exports = async (req, res) => {
     try {
         const body = req.body || {};
+        const user = req.user || {};
         const nroMovil = body.nro_movil;
-        const nroOperador = body.nroOperador !== undefined ? body.nroOperador : 1; // Fallback a 1 si no se provee
+        const nroOperador = user.userId !== undefined ? parseInt(user.userId, 10) : 1; // Fallback a 1 si no se provee
 
         if (nroMovil === undefined || nroMovil === null) {
             return res.status(400).json({

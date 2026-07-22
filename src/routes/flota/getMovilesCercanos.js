@@ -3,8 +3,11 @@ const { sql, poolPromise } = require('../../../db');
 module.exports = async (req, res) => {
     try {
         const body = req.body || {};
+        const user = req.user || {};
         const nroViaje = body.nro_viaje;
-        const nroFlota = body.nroFlota !== undefined ? parseInt(body.nroFlota, 10) : 0;
+        
+        // Contexto del operador autenticado
+        const nroFlota = user.nro_flota !== undefined && user.nro_flota !== null ? parseInt(user.nro_flota, 10) : 0;
         const choferViaja = body.choferViaja !== undefined ? parseInt(body.choferViaja, 10) : 1;
 
         if (nroViaje === undefined || nroViaje === null) {

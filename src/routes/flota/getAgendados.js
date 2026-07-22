@@ -2,10 +2,10 @@ const { sql, poolPromise } = require('../../../db');
 
 module.exports = async (req, res) => {
     try {
-        const body = req.body || {};
+        const user = req.user || {};
 
-        // Mapeamos el permiso enviado (ej: true/false o 1/0) a tipo entero
-        const hasPermisoWebSalud = body.hasPermisoWebSalud === true || body.hasPermisoWebSalud === 'true' || parseInt(body.hasPermisoWebSalud, 10) === 1 ? 1 : 0;
+        // Mapeamos el permiso de la sesión de JWT (WebSalud)
+        const hasPermisoWebSalud = user.permisos && user.permisos.includes('WebSalud') ? 1 : 0;
 
         const pool = await poolPromise;
         const result = await pool.request()

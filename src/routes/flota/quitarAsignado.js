@@ -4,7 +4,8 @@ module.exports = async (req, res) => {
     try {
         const body = req.body || {};
         const nroMovil = body.nro_movil;
-        const nroOperador = body.nroOperador !== undefined ? body.nroOperador : 1;
+        const user = req.user || {};
+        const nroOperador = user.userId !== undefined ? parseInt(user.userId, 10) : 1;
 
         if (nroMovil === undefined || nroMovil === null) {
             return res.status(400).json({
