@@ -47,6 +47,13 @@ const usuariosRoutes   = require('./src/routes/usuarios');
 const puestosRoutes    = require('./src/routes/puestos');
 const audiosRoutes     = require('./src/routes/audios');
 const agendadosRoutes  = require('./src/routes/agendados');
+const historicosRoutes = require('./src/routes/historicos');
+const historicoMensajesRoutes = require('./src/routes/historicomensajes');
+const pagoElectronicoRoutes = require('./src/routes/pagoelectronico');
+const rechazosRoutes = require('./src/routes/rechazos');
+const reportesRoutes = require('./src/routes/reportes');
+const estadisticasRoutes = require('./src/routes/estadisticas');
+const configRoutes = require('./src/routes/config');
 const authMiddleware   = require('./src/middleware/auth');
 
 // Rutas públicas de autenticación
@@ -81,6 +88,23 @@ app.use('/api/audios', authMiddleware, audiosRoutes);
 
 // Rutas protegidas de agendados
 app.use('/api/agendados', authMiddleware, agendadosRoutes);
+
+// Rutas protegidas de históricos (búsqueda de viajes históricos)
+app.use('/api/historicos', authMiddleware, historicosRoutes);
+
+// Rutas protegidas de histórico de mensajes
+app.use('/api/historicomensajes', authMiddleware, historicoMensajesRoutes);
+
+// Rutas protegidas de Pago Electrónico (proxy a API externa de pagos con tarjeta)
+app.use('/api/pagoelectronico', authMiddleware, pagoElectronicoRoutes);
+
+// Rutas protegidas de Rechazos / Reportes / Estadísticas
+app.use('/api/rechazos', authMiddleware, rechazosRoutes);
+app.use('/api/reportes', authMiddleware, reportesRoutes);
+app.use('/api/estadisticas', authMiddleware, estadisticasRoutes);
+
+// Rutas protegidas de Configuración (lee/escribe .env — WebConfig / admin)
+app.use('/api/config', authMiddleware, configRoutes);
 
 app.listen(PORT, () => {
     console.log(`Servidor de API corriendo en http://localhost:${PORT}`)

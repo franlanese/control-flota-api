@@ -12,10 +12,15 @@ module.exports = async (req, res) => {
             });
         }
 
+        // Réplica de HistoricoController@getRecorridosEnFlota (Laravel) — "Ver Recorrido" en un
+        // viaje en realidad no usa el SP Viaje_Recorrido (ese no está conectado a este botón,
+        // devuelve vacío para viajes activos): consulta MOVILES_POSICIONES por el móvil asignado
+        // desde el inicio del viaje. Ver CFR_GetRecorridoViaje (nuevo, resuelve movil/inicio
+        // internamente a partir de @NroViaje para no cambiar el contrato de este endpoint).
         const pool = await poolPromise;
         const result = await pool.request()
             .input('NroViaje', sql.Int, nroViaje)
-            .execute('dbo.Viaje_Recorrido');
+            .execute('dbo.CFR_GetRecorridoViaje');
 
         res.json({
             success: true,

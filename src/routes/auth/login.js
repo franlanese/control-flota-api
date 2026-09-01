@@ -127,6 +127,7 @@ module.exports = async (req, res) => {
                 userId: user.user_id,
                 usuario: user.usuario,
                 nombre: user.nombre,
+                nivel: user.nivel,
                 nro_flota: user.nro_flota,
                 nro_puesto: puestoInput,
                 nro_mesas: nroMesas,
