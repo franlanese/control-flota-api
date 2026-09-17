@@ -54,6 +54,7 @@ const rechazosRoutes = require('./src/routes/rechazos');
 const reportesRoutes = require('./src/routes/reportes');
 const estadisticasRoutes = require('./src/routes/estadisticas');
 const configRoutes = require('./src/routes/config');
+const mensajeriaRoutes = require('./src/routes/mensajeria');
 const authMiddleware   = require('./src/middleware/auth');
 
 // Rutas públicas de autenticación
@@ -105,6 +106,9 @@ app.use('/api/estadisticas', authMiddleware, estadisticasRoutes);
 
 // Rutas protegidas de Configuración (lee/escribe .env — WebConfig / admin)
 app.use('/api/config', authMiddleware, configRoutes);
+
+// Rutas protegidas de Mensajería interna (modal global, F3)
+app.use('/api/mensajeria', authMiddleware, mensajeriaRoutes);
 
 app.listen(PORT, () => {
     console.log(`Servidor de API corriendo en http://localhost:${PORT}`)

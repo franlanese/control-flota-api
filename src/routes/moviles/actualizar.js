@@ -1,13 +1,5 @@
 const { poolPromise, sql } = require('../../../db');
-
-// "30/06/2026 14:30" → JS Date (local) para pasar a sql.DateTime
-function parseArgDatetime(str) {
-    if (!str || !str.trim()) return null;
-    const m = str.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
-    if (!m) return null;
-    const [, d, mo, y, h, min] = m;
-    return new Date(parseInt(y), parseInt(mo) - 1, parseInt(d), parseInt(h), parseInt(min));
-}
+const { parseFechaSuspension } = require('../../utils/fechas');
 
 module.exports = async (req, res) => {
     try {
@@ -19,6 +11,15 @@ module.exports = async (req, res) => {
             Aire, Baul, Grande, Pos, Vale, Mascota, Distancia, Otro,
             suspendido, observacion_suspension, fecha_desde, fecha_hasta,
         } = req.body;
+
+        // Fechas de la suspensión: se parsean ANTES de CFR_Moviles_Update (ver TODO de abajo).
+        const fdObj = suspendido ? parseFechaSuspension(fecha_desde) : null;
+        const fhObj = suspendido ? parseFechaSuspension(fecha_hasta) : null;
+
+        if (suspendido && (!fdObj || !fhObj)) {
+            console.error("Falta completar fechas en actualizar.")
+            res.status(400).json({ success: false, error: "Falta alguna de las fechas"})
+        }
 
         const pool = await poolPromise;
 
@@ -49,10 +50,7 @@ module.exports = async (req, res) => {
             .input('Otro',           sql.VarChar(5),    Otro ? 'True' : 'False')
             .execute('CFR_Moviles_Update');
 
-        // 2. Gestión de suspensión
-        const fdObj = suspendido ? parseArgDatetime(fecha_desde) : null;
-        const fhObj = suspendido ? parseArgDatetime(fecha_hasta) : null;
-
+        // 2. Gestión de suspensión (fechas ya parseadas arriba)
         await pool.request()
             .input('nro_movil',    sql.Int,          nroMovil)
             .input('FechaDesde',   sql.DateTime,     fdObj)

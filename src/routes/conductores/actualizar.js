@@ -1,13 +1,5 @@
 const { poolPromise, sql } = require('../../../db');
-
-// "30/06/2026 14:30" → JS Date (local) para pasar a sql.DateTime
-function parseArgDatetime(str) {
-    if (!str || !str.trim()) return null;
-    const m = str.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
-    if (!m) return null;
-    const [, d, mo, y, h, min] = m;
-    return new Date(parseInt(y), parseInt(mo) - 1, parseInt(d), parseInt(h), parseInt(min));
-}
+const { parseFechaSuspension } = require('../../utils/fechas');
 
 module.exports = async (req, res) => {
     try {
@@ -20,6 +12,16 @@ module.exports = async (req, res) => {
 
         if (imei && imei.length === 15 && !nro_movil) {
             return res.status(400).json({ success: false, error: 'Si coloca IMEI debe colocar también nro de móvil' });
+        }
+
+        // Igual que Laravel (ConductoresController, bloque de suspensión): si se va a suspender,
+        // las dos fechas son obligatorias y válidas. Antes esto no se chequeaba y una fecha con
+        // formato no reconocido se mandaba como NULL sin avisar. Va ANTES de CFR_Conductores_Update
+        // para no dejar el conductor actualizado a medias cuando la suspensión es inválida.
+        const fdObj = suspendido ? parseFechaSuspension(fecha_desde) : null;
+        const fhObj = suspendido ? parseFechaSuspension(fecha_hasta) : null;
+        if (suspendido && (!fdObj || !fhObj)) {
+            return res.status(400).json({ success: false, error: 'Para suspender hay que indicar fecha y hora Desde y Hasta.' });
         }
 
         const pool = await poolPromise;
@@ -41,9 +43,7 @@ module.exports = async (req, res) => {
             .input('validado', sql.VarChar(1), validado ? 'S' : 'N')
             .execute('CFR_Conductores_Update');
 
-        // 2. Gestión de suspensión
-        const fdObj = suspendido ? parseArgDatetime(fecha_desde) : null;
-        const fhObj = suspendido ? parseArgDatetime(fecha_hasta) : null;
+        // 2. Gestión de suspensión (fechas ya parseadas y validadas arriba)
 
         await pool.request()
             .input('nro_conductor', sql.Int, nroConductor)
