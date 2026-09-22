@@ -56,6 +56,7 @@ const estadisticasRoutes = require('./src/routes/estadisticas');
 const configRoutes = require('./src/routes/config');
 const mensajeriaRoutes = require('./src/routes/mensajeria');
 const authMiddleware   = require('./src/middleware/auth');
+const { registrarErrorWeb } = require('./src/utils/errorWeb');
 
 // Rutas públicas de autenticación
 app.use('/api/auth', authRoutes);
@@ -109,6 +110,19 @@ app.use('/api/config', authMiddleware, configRoutes);
 
 // Rutas protegidas de Mensajería interna (modal global, F3)
 app.use('/api/mensajeria', authMiddleware, mensajeriaRoutes);
+
+// Manejador global de errores, equivalente a app/Exceptions/Handler.php de Laravel: registra el
+// error en EVENTOS_ERRORWEB (sólo si es de base de datos) y responde 500.
+// Tiene que ir DESPUÉS de todas las rutas y llevar los 4 parámetros: así Express lo reconoce como
+// manejador de errores y no como un middleware común.
+// eslint-disable-next-line no-unused-vars
+app.use(async (err, req, res, next) => {
+    await registrarErrorWeb(err, req);
+    console.error('Error no controlado:', err.message);
+    // Si el handler ya empezó a responder, Express tiene que cerrar él la conexión.
+    if (res.headersSent) return next(err);
+    res.status(500).json({ success: false, error: 'Error interno del servidor' });
+});
 
 app.listen(PORT, () => {
     console.log(`Servidor de API corriendo en http://localhost:${PORT}`)

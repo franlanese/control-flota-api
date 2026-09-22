@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -15,6 +16,7 @@ module.exports = async (req, res) => {
 
         res.json(places);
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en getPlaces:', err);
         res.status(500).json({ success: false, error: 'Error interno al buscar places' });
     }

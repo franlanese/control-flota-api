@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -21,6 +22,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error al actualizar CONFIG_SIS:', err);
         res.status(500).json({
             success: false,

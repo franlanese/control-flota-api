@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de AccionesController@cancelarViaje (Laravel): a diferencia de accionesEventos
 // (que usa CFR_Eventos_acciones para "anul" sin motivo), acá se usa el SP real de negocio
@@ -27,6 +28,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en MF_CancelarViaje: ', err);
         res.status(500).json({
             success: false,

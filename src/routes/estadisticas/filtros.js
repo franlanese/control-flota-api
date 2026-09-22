@@ -1,4 +1,5 @@
 const { poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de EstadisticasController@index (Laravel): las listas de móviles/zonas que llenan los
 // combos "de un Móvil"/"de una Zona" del formulario. Ver CFR_Estadisticas_Filtros (nuevo).
@@ -15,6 +16,7 @@ module.exports = async (req, res) => {
             }
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en estadisticas/filtros: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al obtener los filtros' });
     }

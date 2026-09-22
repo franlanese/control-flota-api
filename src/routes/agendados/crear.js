@@ -1,4 +1,5 @@
 const { poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 const { crearViaje } = require('./_crearViaje');
 
 module.exports = async (req, res) => {
@@ -13,6 +14,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error al crear viaje agendado:', err);
         res.status(500).json({ success: false, error: err.message });
     }

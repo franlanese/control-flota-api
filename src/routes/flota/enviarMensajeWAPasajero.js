@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de AccionesController@enviarMensajeWAPasajero (Laravel): manda un mensaje de texto
 // libre directo al WhatsApp del pasajero (no al móvil). El SP original de Laravel,
@@ -34,6 +35,7 @@ module.exports = async (req, res) => {
             message: 'Mensaje enviado al pasajero'
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en enviarMensajeWAPasajero: ', err);
         res.status(500).json({
             success: false,

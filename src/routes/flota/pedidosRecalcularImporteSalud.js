@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -28,6 +29,7 @@ module.exports = async (req, res) => {
             avg_importe_taxi: result.output.AVGImporteTaxi
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en recalcularImporteSalud: ', err);
         res.status(500).json({
             success: false,

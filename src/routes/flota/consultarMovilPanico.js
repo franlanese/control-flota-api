@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de AlarmaController@consultarMovilPanico (Laravel): dispara una "consulta" al móvil
 // (mismo SP MF_EnviarConsultaMovil que usa el resto del sistema — no se toca) desde el botón
@@ -17,6 +18,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en consultarMovilPanico: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al consultar el móvil' });
     }

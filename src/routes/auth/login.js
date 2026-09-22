@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -137,6 +138,7 @@ module.exports = async (req, res) => {
         });
 
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en login: ', err);
         res.status(500).json({
             success: false,

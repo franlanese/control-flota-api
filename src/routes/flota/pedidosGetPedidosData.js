@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -18,6 +19,7 @@ module.exports = async (req, res) => {
             condiciones: result.recordsets[3] || []
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en getPedidosData: ', err);
         res.status(500).json({
             success: false,

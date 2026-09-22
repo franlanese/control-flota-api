@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { poolPromise, sql } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de Auth\ResetPasswordController@changePassword (POST /cambiar-clave en Laravel).
 // El usuario que cambia la clave es SIEMPRE el logueado: se toma de req.user.userId (JWT),
@@ -56,6 +57,7 @@ module.exports = async (req, res) => {
         // El front hace el logout y redirige al login ("Una vez cambiada será redirigido al login")
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en CFR_Usuarios_CambiarClave:', err);
         res.status(500).json({ success: false, error: err.message });
     }

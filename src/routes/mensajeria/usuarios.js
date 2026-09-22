@@ -1,4 +1,5 @@
 const { poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de MensajeriaController@getUsuarios (Laravel, raw SQL) — lista de usuarios para el
 // autocomplete de destinatarios + lista de grupos para el combo "Grupos" del compositor de
@@ -16,6 +17,7 @@ module.exports = async (req, res) => {
             }
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en mensajeria/usuarios: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al obtener usuarios/grupos' });
     }

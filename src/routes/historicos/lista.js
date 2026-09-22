@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de HistoricoController@getTabla (Laravel) — ejecuta el SP de negocio ya existente
 // VIAJA_ViajesFiltrados_Tildes3 (no se crea ningún SP nuevo: esta pantalla no tenía SQL
@@ -76,6 +77,7 @@ module.exports = async (req, res) => {
         const result = await request.execute('VIAJA_ViajesFiltrados_Tildes3');
         res.json({ success: true, data: result.recordset });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en historicos/lista:', err);
         res.status(500).json({ success: false, error: err.message });
     }

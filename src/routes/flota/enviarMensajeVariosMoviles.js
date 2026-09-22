@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de AccionesController@enviarMensajeVariosMoviles (Laravel): a diferencia de
 // enviarMensaje.js (un solo móvil, dbo.MF_EnviarmensajeOperaMovil), este ejecuta
@@ -37,6 +38,7 @@ module.exports = async (req, res) => {
             message: 'Mensaje enviado con éxito'
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en enviarMensajeVariosMoviles: ', err);
         res.status(500).json({
             success: false,

@@ -1,4 +1,5 @@
 const { poolPromise, sql } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 const { crearViaje } = require('./_crearViaje');
 
 // "Editar" en este sistema significa anular el viaje agendado y crear uno
@@ -42,6 +43,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error al editar viaje agendado:', err);
         res.status(500).json({ success: false, error: err.message });
     }

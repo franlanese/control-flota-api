@@ -1,4 +1,5 @@
 const { poolPromise, sql } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 const { parseFechaSuspension } = require('../../utils/fechas');
 
 module.exports = async (req, res) => {
@@ -18,7 +19,7 @@ module.exports = async (req, res) => {
 
         if (suspendido && (!fdObj || !fhObj)) {
             console.error("Falta completar fechas en actualizar.")
-            res.status(400).json({ success: false, error: "Falta alguna de las fechas"})
+            return res.status(400).json({ success: false, error: "Falta alguna de las fechas"})
         }
 
         const pool = await poolPromise;
@@ -62,6 +63,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en CFR_Moviles_Update / MF_SuspencionMoviles:', err);
         res.status(500).json({ success: false, error: err.message });
     }

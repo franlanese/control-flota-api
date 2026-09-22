@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de MensajeriaController@marcarLeido — SP preexistente MensajeUsuario_MarcarLeido.
 module.exports = async (req, res) => {
@@ -15,6 +16,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en mensajeria/marcarLeido: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al marcar el mensaje como leído' });
     }

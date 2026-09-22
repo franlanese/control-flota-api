@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de HistoricoController@cambiarEstado (Laravel): reutiliza el SP de negocio
 // MF_CambiarEstadoViajeSalud tal cual, sin crear nada nuevo. No recibe un código de estado:
@@ -24,6 +25,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en historicos/cambiarEstado:', err);
         res.status(500).json({ success: false, error: err.message });
     }

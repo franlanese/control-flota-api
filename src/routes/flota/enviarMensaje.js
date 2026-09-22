@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -32,6 +33,7 @@ module.exports = async (req, res) => {
             message: 'Mensaje enviado al móvil con éxito'
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en enviarMensaje: ', err);
         res.status(500).json({
             success: false,

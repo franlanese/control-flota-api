@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de RechazosController@getTabla (Laravel, raw SQL) — ver CFR_Rechazos_Lista (nuevo).
 // Los filtros por móvil/conductor/viaje llegan como dos parámetros separados (uno INT, uno
@@ -38,6 +39,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: result.recordset });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en rechazos/lista: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al obtener los rechazos' });
     }

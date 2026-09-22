@@ -1,3 +1,4 @@
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 const bcrypt = require('bcryptjs');
 
 // Herramienta de administración: convierte una clave en texto al hash bcrypt con el mismo formato
@@ -28,6 +29,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: { hash } });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en usuarios/cifrarClave:', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al cifrar la clave' });
     }

@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de EstadisticasController@getViajesPorOperador — SP preexistente NU_ViajesPorOperador.
 module.exports = async (req, res) => {
@@ -18,6 +19,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: result.recordset });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en estadisticas/viajesPorOperador: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al generar la estadística' });
     }

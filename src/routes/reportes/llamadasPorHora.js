@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de ReportesController@llamadasPorHora — SP preexistente Rep_LlamadasxHora.
 module.exports = async (req, res) => {
@@ -24,6 +25,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: result.recordset });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en reportes/llamadasPorHora: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al generar el reporte' });
     }

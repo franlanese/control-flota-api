@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -19,6 +20,7 @@ module.exports = async (req, res) => {
             message: 'Último visto en consola actualizado correctamente'
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en setUltimoVistoConsola: ', err);
         res.status(500).json({
             success: false,

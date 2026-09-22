@@ -1,3 +1,4 @@
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 const { setEnvValues } = require('../../utils/envFile');
 
 // Sube el logo de la empresa y lo deja servido localmente por esta misma API, en vez de
@@ -28,6 +29,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: { url } });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en config/logo: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al subir el logo' });
     }

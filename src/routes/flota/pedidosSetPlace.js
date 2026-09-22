@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 const { randomUUID } = require('crypto');
 
 module.exports = async (req, res) => {
@@ -20,6 +21,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en setPlace:', err);
         res.status(500).json({ success: false, error: 'Error interno al guardar place' });
     }

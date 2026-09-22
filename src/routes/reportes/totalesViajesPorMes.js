@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de ReportesController@totalesviajespormes — SP preexistente Rep_xTipoViaje. Laravel
 // arma "01-mm/yyyy" y "un mes después" con SQL crudo (DATEADD); acá se calculan las dos fechas
@@ -25,6 +26,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: result.recordset });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en reportes/totalesViajesPorMes: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al generar el reporte' });
     }

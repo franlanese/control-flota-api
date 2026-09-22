@@ -1,4 +1,5 @@
 const { poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -10,6 +11,7 @@ module.exports = async (req, res) => {
 
         res.json({ AikoOperador });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error al obtener AikoOperador:', err);
         res.status(500).json({
             success: false,

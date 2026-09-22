@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de HistoricoMensajeController@getTabla (Laravel): esa pantalla no tenía SP, la query
 // (UNION de MENSAJES_MOVILES + MENSAJES_CHOFER) estaba armada a mano en el controlador. Se
@@ -26,6 +27,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: result.recordset });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en historicomensajes/lista: ', err);
         res.status(500).json({
             success: false,

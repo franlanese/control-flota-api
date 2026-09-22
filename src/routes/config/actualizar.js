@@ -1,3 +1,4 @@
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 const { setEnvValues } = require('../../utils/envFile');
 
 // Réplica de ConfigController@setValue (Laravel). A propósito NO recibe {key, value} genérico
@@ -54,6 +55,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, mensaje: 'Configuración actualizada correctamente' });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en config/actualizar: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al guardar la configuración' });
     }

@@ -1,4 +1,5 @@
 const { poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     const usar6Horas = process.env.CONF_6HORAS === '1';
@@ -10,6 +11,7 @@ module.exports = async (req, res) => {
         const result = await pool.request().query(`SET NOCOUNT ON; SET DATEFORMAT dmy; EXEC ${spName}`);
         res.json({ success: true, data: result.recordset, usar6Horas });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en viajesTotales:', err);
         res.status(500).json({ success: false, error: err.message });
     }

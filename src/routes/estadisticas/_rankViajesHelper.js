@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Compartido por rankViajesMoviles/rankViajesZonas/rankViajesMovilesReq — los tres son el mismo
 // SP preexistente NU_RankViajes, solo cambia @Tipo (1=móviles, 2=zonas, 3=móviles requeridos).
@@ -25,6 +26,7 @@ module.exports = function makeRankViajesHandler(tipo, { requiereCalle = false } 
             const result = await request.execute('dbo.NU_RankViajes');
             res.json({ success: true, data: result.recordset });
         } catch (err) {
+            await registrarErrorWeb(err, req);
             console.error(`Error en estadisticas/rankViajes (Tipo=${tipo}): `, err);
             res.status(500).json({ success: false, error: 'Error interno del servidor al generar la estadística' });
         }

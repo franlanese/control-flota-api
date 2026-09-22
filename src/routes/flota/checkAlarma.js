@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de AlarmaController@checkAlarma (Laravel): trae las alarmas de pánico activas
 // (ALARMAS.Fecha_Hora_Fin IS NULL) de las últimas 6hs, respetando el mismo filtro de
@@ -35,6 +36,7 @@ module.exports = async (req, res) => {
             data: result.recordset
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en checkAlarma: ', err);
         res.status(500).json({
             success: false,

@@ -1,3 +1,4 @@
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 // Los audios IVR no viven en SQL Server: son archivos que residen en el propio
 // servidor IVR externo. Este endpoint hace de proxy hacia su listado HTTP
 // (equivalente a AudioController@getTable en Laravel) y arma para cada
@@ -29,6 +30,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en proxy de audios IVR:', err);
         res.status(500).json({ success: false, error: err.message });
     }

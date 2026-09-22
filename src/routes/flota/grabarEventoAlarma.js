@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de AlarmaController@grabarEventoAlarma (Laravel): registra un evento sobre una alarma
 // de pánico (CP = "consulté al móvil", CA = "cerré la alarma") vía el SP de negocio existente
@@ -43,6 +44,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en grabarEventoAlarma: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al grabar el evento de alarma' });
     }

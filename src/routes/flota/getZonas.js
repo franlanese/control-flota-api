@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 // Importamos la conexión a la base de datos (subiendo dos niveles)
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Endpoint GET para obtener las zonas
 module.exports = async (req, res) => {
@@ -31,6 +32,7 @@ module.exports = async (req, res) => {
         });
 
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error al obtener zonas en /api/flota/zonas: ', err);
         res.status(500).json({
             success: false,

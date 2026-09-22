@@ -1,4 +1,5 @@
 const { poolPromise, sql } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Suspende (borra) un día puntual de un viaje agendado recurrente,
 // sin anular el resto de las repeticiones.
@@ -21,6 +22,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en NU_ViajeAgendado_BorrarItem:', err);
         res.status(500).json({ success: false, error: err.message });
     }

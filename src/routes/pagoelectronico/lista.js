@@ -1,3 +1,4 @@
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 // Réplica de PagoElectronicoController@index/@getTabla + @getToken (Laravel): a diferencia del
 // resto de la API, esta pantalla NO consulta la base SQL Server — proxea un servicio HTTP
 // externo de pagos con tarjeta (CONF_SECONDARY_WEB_SERVICE/CONF_API_KEY/CONF_ID_EMPRESA,
@@ -67,6 +68,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: lista });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en pagoelectronico/lista: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al obtener los pagos electrónicos' });
     }

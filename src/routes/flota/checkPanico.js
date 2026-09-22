@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de AlarmaController@checkPanico (Laravel): posición/estado actual de UNA alarma
 // puntual, usada para refrescar el mini-mapa del modal de Pánico mientras está abierto
@@ -17,6 +18,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true, data: result.recordset });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en checkPanico: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al comprobar el pánico' });
     }

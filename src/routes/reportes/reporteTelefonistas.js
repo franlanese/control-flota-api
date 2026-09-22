@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de ReportesController@reportesTelefonistas — SP preexistente Rep_ReporteTelefonistas.
 // OJO: este SP no existe en la base "Demo" contra la que apunta este API en desarrollo (se
@@ -29,6 +30,7 @@ module.exports = async (req, res) => {
         // front al renderizar, no hace falta reformatear cada campo del recordset acá.
         res.json({ success: true, data: result.recordset });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en reportes/reporteTelefonistas: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al generar el reporte (¿existe Rep_ReporteTelefonistas en esta base?)' });
     }

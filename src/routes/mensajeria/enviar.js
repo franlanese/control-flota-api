@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de MensajeriaController@mensajeriaEnviar — SPs preexistentes MensajeUsuario_Grabar
 // (destinatario individual) / MensajeUsuario_GrabarGrupo (mensaje a un grupo), sin tocar.
@@ -40,6 +41,7 @@ module.exports = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en mensajeria/enviar: ', err);
         res.status(500).json({ success: false, error: 'Error interno del servidor al enviar el mensaje' });
     }

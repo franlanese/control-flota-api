@@ -1,4 +1,5 @@
 const { poolPromise, sql } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
@@ -9,6 +10,7 @@ module.exports = async (req, res) => {
             .execute('CFR_Conductores_Delete');
         res.json({ success: true });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en CFR_Conductores_Delete:', err);
         res.status(500).json({ success: false, error: err.message });
     }

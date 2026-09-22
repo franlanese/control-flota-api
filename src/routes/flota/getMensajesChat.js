@@ -1,4 +1,5 @@
 const { sql, poolPromise } = require('../../../db');
+const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de MensajesMovilesController@getAllMensajes (minichat.blade.php / minichat.js):
 // UNION de MENSAJES_MOVILES ('M') + MENSAJES_CHOFER ('C') + MENSAJES_EVENTOS ('E'),
@@ -41,6 +42,7 @@ module.exports = async (req, res) => {
             data: result.recordset
         });
     } catch (err) {
+        await registrarErrorWeb(err, req);
         console.error('Error en getMensajesChat: ', err);
         res.status(500).json({
             success: false,
