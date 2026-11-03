@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { poolPromise, sql } = require('../../../db');
 const { registrarErrorWeb } = require('../../utils/errorWeb');
+const { registrarSesion } = require('../../utils/logSesion');
 
 module.exports = async (req, res) => {
     try {
@@ -23,6 +24,24 @@ module.exports = async (req, res) => {
             .input('nivel', sql.Int, parseInt(nivel))
             .input('nro_puesto', sql.Int, nro_puesto ? parseInt(nro_puesto) : null)
             .execute('CFR_Usuarios_Update');
+
+        // Si se le puso una clave nueva, queda registrado en CFR_LogsUsuario. La fila es del
+        // usuario EDITADO (sus datos los completa el SP), pero IP, navegador, puesto y mesas son
+        // de quien hizo el cambio, porque es desde donde se hizo; quién fue queda en Detalle.
+        // Va aparte: si falla el registro, el cambio ya está guardado y no hay que informar error.
+        if (hash) {
+            try {
+                await registrarSesion(pool, req, {
+                    evento: 'CAMBIO_CLAVE',
+                    nroOperador: userId,
+                    nroPuesto: req.user.nro_puesto,
+                    nroMesas: req.user.nro_mesas,
+                    detalle: `Cambiada por ${req.user.usuario} (id ${req.user.userId}) desde la pantalla de Usuarios`,
+                });
+            } catch (logErr) {
+                console.error('Error al registrar el cambio de clave:', logErr);
+            }
+        }
 
         res.json({ success: true });
     } catch (err) {

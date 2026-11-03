@@ -6,6 +6,12 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// En producción el API corre detrás de nginx (mismo servidor). Con esto Express toma la IP
+// del cliente del header X-Forwarded-For, pero SÓLO cuando el pedido llega desde loopback,
+// o sea desde nuestro propio nginx. No usar `true`: confiaría en ese header venga de donde
+// venga, y cualquiera podría falsear la IP que queda en el log de accesos.
+app.set('trust proxy', 'loopback');
+
 // Configurar orígenes permitidos para CORS
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
@@ -45,71 +51,107 @@ const titularesRoutes  = require('./src/routes/titulares');
 const reporteAvlRoutes = require('./src/routes/reporteavl');
 const usuariosRoutes   = require('./src/routes/usuarios');
 const puestosRoutes    = require('./src/routes/puestos');
+const feriadosRoutes   = require('./src/routes/feriados');
+const recorridosRoutes = require('./src/routes/recorridos');
 const audiosRoutes     = require('./src/routes/audios');
 const agendadosRoutes  = require('./src/routes/agendados');
 const historicosRoutes = require('./src/routes/historicos');
 const historicoMensajesRoutes = require('./src/routes/historicomensajes');
 const pagoElectronicoRoutes = require('./src/routes/pagoelectronico');
+const liquidacionesRoutes = require('./src/routes/liquidaciones');
+const editarImportesRoutes = require('./src/routes/editarimportes');
 const rechazosRoutes = require('./src/routes/rechazos');
 const reportesRoutes = require('./src/routes/reportes');
 const estadisticasRoutes = require('./src/routes/estadisticas');
 const configRoutes = require('./src/routes/config');
+const parametrosRoutes = require('./src/routes/parametros');
 const mensajeriaRoutes = require('./src/routes/mensajeria');
 const authMiddleware   = require('./src/middleware/auth');
 const { registrarErrorWeb } = require('./src/utils/errorWeb');
+const { verificarPermisosRutas } = require('./src/utils/verificarPermisosRutas');
+const { conCtaCte } = require('./src/utils/conCtaCte');
+
+// Monta cada namespace y lo anota para el chequeo de permisos de arranque (verificarPermisosRutas).
+// Usar montar() en vez de app.use() para que las rutas nuevas también se revisen.
+const montajes = [];
+const montar = (prefijo, ...handlers) => {
+    app.use(prefijo, ...handlers);
+    montajes.push([prefijo, handlers[handlers.length - 1]]);
+};
 
 // Rutas públicas de autenticación
-app.use('/api/auth', authRoutes);
+montar('/api/auth', authRoutes);
 
 // Rutas protegidas de flota
-app.use('/api/flota', authMiddleware, flotaRoutes);
+montar('/api/flota', authMiddleware, flotaRoutes);
 
 // Rutas protegidas de panel de control
-app.use('/api/paneldecontrol', authMiddleware, panelRoutes);
+montar('/api/paneldecontrol', authMiddleware, panelRoutes);
 
 // Rutas protegidas de móviles
-app.use('/api/moviles', authMiddleware, movilesRoutes);
+montar('/api/moviles', authMiddleware, movilesRoutes);
 
 // Rutas protegidas de conductores
-app.use('/api/conductores', authMiddleware, conductoresRoutes);
+montar('/api/conductores', authMiddleware, conductoresRoutes);
 
 // Rutas protegidas de titulares
-app.use('/api/titulares', authMiddleware, titularesRoutes);
+montar('/api/titulares', authMiddleware, titularesRoutes);
 
 // Rutas protegidas de reporte AVL (solo lectura)
-app.use('/api/reporteavl', authMiddleware, reporteAvlRoutes);
+montar('/api/reporteavl', authMiddleware, reporteAvlRoutes);
 
 // Rutas protegidas de usuarios
-app.use('/api/usuarios', authMiddleware, usuariosRoutes);
+montar('/api/usuarios', authMiddleware, usuariosRoutes);
 
 // Rutas protegidas de puestos (ABM completo)
-app.use('/api/puestos', authMiddleware, puestosRoutes);
+montar('/api/puestos', authMiddleware, puestosRoutes);
+
+// Rutas protegidas de feriados (ABM completo)
+montar('/api/feriados', authMiddleware, feriadosRoutes);
+
+// Rutas protegidas de recorridos (recorrido de un móvil en un rango de fechas)
+montar('/api/recorridos', authMiddleware, recorridosRoutes);
 
 // Rutas protegidas de audios IVR (proxy)
-app.use('/api/audios', authMiddleware, audiosRoutes);
+montar('/api/audios', authMiddleware, audiosRoutes);
 
 // Rutas protegidas de agendados
-app.use('/api/agendados', authMiddleware, agendadosRoutes);
+montar('/api/agendados', authMiddleware, agendadosRoutes);
 
 // Rutas protegidas de históricos (búsqueda de viajes históricos)
-app.use('/api/historicos', authMiddleware, historicosRoutes);
+montar('/api/historicos', authMiddleware, historicosRoutes);
 
 // Rutas protegidas de histórico de mensajes
-app.use('/api/historicomensajes', authMiddleware, historicoMensajesRoutes);
+montar('/api/historicomensajes', authMiddleware, historicoMensajesRoutes);
 
 // Rutas protegidas de Pago Electrónico (proxy a API externa de pagos con tarjeta)
-app.use('/api/pagoelectronico', authMiddleware, pagoElectronicoRoutes);
+montar('/api/pagoelectronico', authMiddleware, pagoElectronicoRoutes);
+
+// Rutas protegidas de Liquidaciones (proxy al servicio externo)
+montar('/api/liquidaciones', authMiddleware, liquidacionesRoutes);
+
+// Rutas protegidas de Editar Importes
+montar('/api/editarimportes', authMiddleware, editarImportesRoutes);
+
+// Rutas protegidas de CtaCtes y SubCtas. Igual que routes/web.php: con CONF_CONCTACTE en 0 no existen.
+if (conCtaCte()) {
+    montar('/api/ctacte', authMiddleware, require('./src/routes/ctacte'));
+    montar('/api/subcta', authMiddleware, require('./src/routes/subcta'));
+}
 
 // Rutas protegidas de Rechazos / Reportes / Estadísticas
-app.use('/api/rechazos', authMiddleware, rechazosRoutes);
-app.use('/api/reportes', authMiddleware, reportesRoutes);
-app.use('/api/estadisticas', authMiddleware, estadisticasRoutes);
+montar('/api/rechazos', authMiddleware, rechazosRoutes);
+montar('/api/reportes', authMiddleware, reportesRoutes);
+montar('/api/estadisticas', authMiddleware, estadisticasRoutes);
 
 // Rutas protegidas de Configuración (lee/escribe .env — WebConfig / admin)
-app.use('/api/config', authMiddleware, configRoutes);
+montar('/api/config', authMiddleware, configRoutes);
+
+// Rutas protegidas de parámetros (por ahora sólo el sonido de la alarma)
+montar('/api/parametros', authMiddleware, parametrosRoutes);
 
 // Rutas protegidas de Mensajería interna (modal global, F3)
-app.use('/api/mensajeria', authMiddleware, mensajeriaRoutes);
+montar('/api/mensajeria', authMiddleware, mensajeriaRoutes);
 
 // Manejador global de errores, equivalente a app/Exceptions/Handler.php de Laravel: registra el
 // error en EVENTOS_ERRORWEB (sólo si es de base de datos) y responde 500.
@@ -123,6 +165,8 @@ app.use(async (err, req, res, next) => {
     if (res.headersSent) return next(err);
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
 });
+
+verificarPermisosRutas(montajes);
 
 app.listen(PORT, () => {
     console.log(`Servidor de API corriendo en http://localhost:${PORT}`)

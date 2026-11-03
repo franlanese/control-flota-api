@@ -22,8 +22,13 @@ module.exports = async (req, res) => {
         // El ?v=<timestamp> es para romper la caché del navegador: el archivo siempre se llama
         // igual, así que sin esto el sidebar seguiría mostrando el logo anterior hasta un
         // hard-refresh. express.static ignora el query string, así que el archivo se sirve igual.
+        //
+        // Se guarda la ruta RELATIVA, sin host: el front le antepone el origen del API
+        // (resolverUrlApi en control-flota-react/src/utils/apiUrl.ts). Antes se armaba con
+        // req.get('host'), y si el logo se subía desde desarrollo quedaba 'localhost:7400'
+        // grabado y producción se lo mandaba a todos los navegadores.
         const version = Date.now();
-        const url = `${req.protocol}://${req.get('host')}/fotos/empresa/${req.file.filename}?v=${version}`;
+        const url = `/fotos/empresa/${req.file.filename}?v=${version}`;
 
         setEnvValues({ CONF_EMPRESALOGO: url });
 

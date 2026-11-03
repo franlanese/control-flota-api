@@ -8,6 +8,9 @@ module.exports = async (req, res) => {
             lat: parseFloat(process.env.CONF_MAPLAT),
             lng: parseFloat(process.env.CONF_MAPLNG),
             zoom: parseFloat(process.env.CONF_MAPZOOM),
+            // config('configuracion.EMERGENCIA') ("Emergencia en mapa" en Config): si el mapa
+            // marca los móviles en emergencia.
+            emergencia: process.env.CONF_EMERGENCIA === '1',
         },
     });
 };

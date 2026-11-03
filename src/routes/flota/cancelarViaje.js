@@ -1,9 +1,8 @@
 const { sql, poolPromise } = require('../../../db');
 const { registrarErrorWeb } = require('../../utils/errorWeb');
 
-// Réplica de AccionesController@cancelarViaje (Laravel): a diferencia de accionesEventos
-// (que usa CFR_Eventos_acciones para "anul" sin motivo), acá se usa el SP real de negocio
-// que exige un código de motivo de cancelación.
+// Réplica de AccionesController@cancelarViaje (Laravel): usa el SP real de negocio, que exige
+// un código de motivo de cancelación.
 module.exports = async (req, res) => {
     try {
         const body = req.body || {};

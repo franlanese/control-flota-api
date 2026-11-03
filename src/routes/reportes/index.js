@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { requierePermiso } = require('../../middleware/permisos');
 
-router.post('/llamadasPorHora', require('./llamadasPorHora')); // ✔️ Rep_LlamadasxHora
-router.post('/totalesViajesPorMes', require('./totalesViajesPorMes')); // ✔️ Rep_xTipoViaje
-router.post('/reporteTelefonistas', require('./reporteTelefonistas')); // ⚠️ Rep_ReporteTelefonistas (no existe en la base Demo)
+router.post('/llamadasPorHora', requierePermiso('WebReportes'), require('./llamadasPorHora')); // ✔️ Rep_LlamadasxHora
+router.post('/totalesViajesPorMes', requierePermiso('WebReportes'), require('./totalesViajesPorMes')); // ✔️ Rep_xTipoViaje
+router.post('/reporteTelefonistas', requierePermiso('WebReportes'), require('./reporteTelefonistas')); // ⚠️ Rep_ReporteTelefonistas (no existe en la base Demo)
 
 // TODO: "Búsqueda de Llamadas" y "Registros por ID de Llamada" (ReportesController@busquedaLlamada
 // / @registrosPorIdLlamada en Laravel) consultan una segunda base de datos MySQL separada

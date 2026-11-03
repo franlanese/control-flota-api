@@ -2,13 +2,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sql, poolPromise } = require('../../../db');
 const { registrarErrorWeb } = require('../../utils/errorWeb');
+const { registrarSesion } = require('../../utils/logSesion');
+const { conCtaCte } = require('../../utils/conCtaCte');
+
+const usaPuestos = () => process.env.CONF_IVR != null && process.env.CONF_IVR !== '0';
 
 module.exports = async (req, res) => {
     try {
         const body = req.body || {};
         const usuarioInput = body.usuario;
         const passwordInput = body.password;
-        const puestoInput = body.puesto !== undefined ? parseInt(body.puesto, 10) : 0;
+        const puestoInput = usaPuestos ? (body.puesto !== undefined ? parseInt(body.puesto, 10) : 0) : 0;
         const mesasInput = Array.isArray(body.mesas) ? body.mesas : [];
 
         if (!usuarioInput || !passwordInput) {
@@ -76,7 +80,6 @@ module.exports = async (req, res) => {
         }
 
         // 5. Actualizar los datos de conexión del usuario
-        const ipCliente = req.ip || req.connection.remoteAddress || '127.0.0.1';
         const versionApp = 'v3.0.0-node';
 
         await pool.request()
@@ -86,14 +89,21 @@ module.exports = async (req, res) => {
             .input('Version', sql.VarChar(50), versionApp)
             .query('UPDATE NuUsuarios SET nro_puesto = @NroPuesto, nro_mesas = @NroMesas, ultima_conexion = GETDATE(), version = @Version WHERE user_id = @UserId');
 
-        // 6. Registrar Log de IP de acceso
+        // 6. Registrar el logsin en CFR_LogsUsuario (usuario, puesto, IP, navegador, etc.).
+        // Sólo se registran los logins exitosos. Va en su propio try/catch: un fallo de
+        // auditoría no tiene que impedir que el usuario entre.
         try {
-            await pool.request()
-                .input('NroOperador', sql.Int, user.user_id)
-                .input('IP', sql.VarChar(50), ipCliente)
-                .execute('dbo.NU_LogIP');
-        } catch (ipErr) {
-            console.error('Error al registrar IP de acceso:', ipErr);
+            await registrarSesion(pool, req, {
+                evento: 'LOGIN',
+                nroOperador: user.user_id,
+                nroPuesto: puestoInput,
+                nroMesas,
+                zonaHoraria: body.zonaHoraria,   // { pantalla, zonaHoraria }, lo manda el front
+                versionApp,
+                detalle: estado === 'AVISO' ? mensaje : null,
+            });
+        } catch (logErr) {
+            console.error('Error al registrar el login:', logErr);
         }
 
         // 7. Cargar permisos del nivel de usuario
@@ -132,7 +142,8 @@ module.exports = async (req, res) => {
                 nro_flota: user.nro_flota,
                 nro_puesto: puestoInput,
                 nro_mesas: nroMesas,
-                permisos: permisos
+                permisos: permisos,
+                con_ctacte: conCtaCte()     // CONF_CONCTACTE: habilita el menú de CtaCtes y SubCtas
             },
             aviso: estado === 'AVISO' ? mensaje : null
         });

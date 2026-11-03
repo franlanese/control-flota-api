@@ -1,5 +1,6 @@
 const { poolPromise, sql } = require('../../../db');
 const { registrarErrorWeb } = require('../../utils/errorWeb');
+const { urlPublica } = require('../../utils/urlPublica');
 
 module.exports = async (req, res) => {
     try {
@@ -9,7 +10,7 @@ module.exports = async (req, res) => {
         }
 
         const urlCorta = `${nroTitular}/${req.file.filename}`;
-        const urlCompleta = `${req.protocol}://${req.get('host')}/fotos/titulares/${urlCorta}`;
+        const urlCompleta = urlPublica(req, `/fotos/titulares/${urlCorta}`);
 
         const pool = await poolPromise;
         await pool.request()

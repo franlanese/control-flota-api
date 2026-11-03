@@ -6,9 +6,9 @@ module.exports = async (req, res) => {
     const spName = usar6Horas ? 'Rep_ViajesTotalesxHora' : 'Rep_ViajesTotalesxHora8';
     try {
         const pool = await poolPromise;
-        // SET DATEFORMAT dmy: los SPs internos usan fechas en formato DD/MM/YYYY (Argentina).
-        // Tedious puede conectar con mdy (inglés); esto corrige la conversión implícita varchar→datetime.
-        const result = await pool.request().query(`SET NOCOUNT ON; SET DATEFORMAT dmy; EXEC ${spName}`);
+        // Sin SET DATEFORMAT, como Laravel: en Viaja el SP arma la fecha como yyyy.mm.dd y con dmy
+        // falla o lee otra fecha. Ver docs/decisions/0005-dateformat-panel.md.
+        const result = await pool.request().execute(spName);
         res.json({ success: true, data: result.recordset, usar6Horas });
     } catch (err) {
         await registrarErrorWeb(err, req);

@@ -1,5 +1,6 @@
 const express = require('express')
 const router = express.Router()
+const { requierePermiso, soloLogin } = require('../../middleware/permisos');
 
 // Importamos todos los controladores
 const getViajesRoute = require('./getViajesFlota')
@@ -23,7 +24,9 @@ const grabarEventoAlarma = require('./grabarEventoAlarma')
 const consultarMovilPanico = require('./consultarMovilPanico')
 const lineasSinAtender = require('./lineasSinAtender')
 const getPosicionesViajexId = require('./getPosicionesViajexId')
-const accionesEventos = require('./accionesEventos')
+const getRecorridoEvento = require('./getRecorridoEvento')
+const finalizarViaje = require('./finalizarViaje')
+const eventoAccion = require('./eventoAccion')
 const cancelarViaje = require('./cancelarViaje')
 const getCuentasCorrientes = require('./getCuentasCorrientes')
 const getMovilById = require('./getMovilById')
@@ -63,75 +66,77 @@ const pedidosGetPlaces = require('./pedidosGetPlaces')
 const pedidosSetPlace = require('./pedidosSetPlace')
 
 // Definimos las rutas con sus verbos correspondientes
-router.post('/getViajes', getViajesRoute)
-router.post('/getMoviles', getMovilesRoute)
-router.get('/getZonas', getZonasRoute)
-router.get('/getMapaZonas', getMapaZonas)   // ✔️ Mapa: zonas/bases con centro geográfico
-router.get('/getMapaConfig', getMapaConfig) // ✔️ Mapa: centro/zoom inicial (MAPLAT/MAPLNG/MAPZOOM)
-router.get('/getEmpresaConfig', getEmpresaConfig) // ✔️ Sidebar: nombre/logo de empresa (EMPRESANOMBRE/EMPRESALOGO)
-router.post('/consultarEstadoZona', consultarEstadoZona)
-router.post('/ponerPrimero', ponerPrimero)
-router.post('/suspenderMovil', suspenderMovil)
-router.post('/desuspenderMovil', desuspenderMovil)
-router.post('/quitarAsignado', quitarAsignado)
-router.post('/getStatsMin', getStatsMin)
-router.get('/getSemaforos', getSemaforos)
-router.get('/getTiempoAsignacion', getTiempoAsignacion)
-router.post('/getMovilesCercanos', getMovilesCercanos)
-router.post('/checkAlarma', checkAlarma) // ✔️ Alarmas de pánico activas (campanita parpadeante)
-router.post('/checkPanico', checkPanico) // ✔️ Posición actual de una alarma puntual (modal de Pánico)
-router.post('/grabarEventoAlarma', grabarEventoAlarma) // ✔️ Grabar evento de alarma (CP/CA)
-router.post('/consultarMovilPanico', consultarMovilPanico) // ✔️ Botón "Consultar" del modal de Pánico
-router.get('/lineasSinAtender', lineasSinAtender)
-router.post('/getPosicionesViajexId', getPosicionesViajexId)
-router.post('/accionesEventos', accionesEventos)
-router.post('/cancelarViaje', cancelarViaje) // ✔️ Anular viaje con motivo (MF_CancelarViaje)
-router.get('/getCuentasCorrientes', getCuentasCorrientes)
-router.post('/getMovilById', getMovilById)
-router.get('/getReporteGlobal', getReporteGlobal) // ✔️ Corregido: removido el punto '.'
-router.get('/getEventos', getEventos)             // ✔️ Registrado getEventos
-router.post('/getViajexId', getViajexId)          // ✔️ Registrado getViajexId
-router.post('/getMovilesAutocomplete', getMovilesAutocomplete) // ✔️ Autocomplete
-router.post('/getAgendados', getAgendados)         // ✔️ Agendados
-router.post('/getConsola', getConsola)             // ✔️ Consola
-router.post('/getMensajesChat', getMensajesChat)   // ✔️ Cuadro de mensajes (minichat: móvil/operador/eventos)
-router.post('/setUltimoVistoConsola', setUltimoVistoConsola) // ✔️ Set ultimo visto consola
-router.post('/getMensajesMovil', getMensajesMovil) // ✔️ Obtener mensajes del móvil
-router.post('/enviarMensaje', enviarMensaje)       // ✔️ Enviar mensaje al móvil
-router.post('/enviarMensajeVariosMoviles', enviarMensajeVariosMoviles) // ✔️ Enviar mensaje a varios móviles (o L/O/T = libres/ocupados/todos)
-router.post('/enviarMensajeWAPasajero', enviarMensajeWAPasajero) // ✔️ Enviar mensaje WA al pasajero (solo viajes de WhatsApp)
-router.post('/asignarMovil', asignarMovil)         // ✔️ Asignar móvil a viaje
-router.get('/ivrConf', ivrConf)                    // ✔️ Configuración de IVR y WhatsApp
-router.post('/ivrConf', ivrConfUpdate)
-router.get('/ivrConf/tv', ivrConfGetTV)
-router.post('/ivrConf/tv', ivrConfUpdateTV)
+router.post('/getViajes', soloLogin, getViajesRoute)
+router.post('/getMoviles', soloLogin, getMovilesRoute)
+router.get('/getZonas', soloLogin, getZonasRoute)
+router.get('/getMapaZonas', requierePermiso('WebMapa'), getMapaZonas)   // ✔️ Mapa: zonas/bases con centro geográfico
+router.get('/getMapaConfig', requierePermiso('WebMapa'), getMapaConfig) // ✔️ Mapa: centro/zoom inicial (MAPLAT/MAPLNG/MAPZOOM)
+router.get('/getEmpresaConfig', soloLogin, getEmpresaConfig) // ✔️ Sidebar: nombre/logo de empresa (EMPRESANOMBRE/EMPRESALOGO)
+router.post('/consultarEstadoZona', soloLogin, consultarEstadoZona)
+router.post('/ponerPrimero', soloLogin, ponerPrimero)
+router.post('/suspenderMovil', soloLogin, suspenderMovil)
+router.post('/desuspenderMovil', soloLogin, desuspenderMovil)
+router.post('/quitarAsignado', soloLogin, quitarAsignado)
+router.post('/getStatsMin', soloLogin, getStatsMin)
+router.get('/getSemaforos', soloLogin, getSemaforos)
+router.get('/getTiempoAsignacion', soloLogin, getTiempoAsignacion)
+router.post('/getMovilesCercanos', soloLogin, getMovilesCercanos)
+router.post('/checkAlarma', soloLogin, checkAlarma) // ✔️ Alarmas de pánico activas (campanita parpadeante)
+router.post('/checkPanico', soloLogin, checkPanico) // ✔️ Posición actual de una alarma puntual (modal de Pánico)
+router.post('/grabarEventoAlarma', soloLogin, grabarEventoAlarma) // ✔️ Grabar evento de alarma (CP/CA)
+router.post('/consultarMovilPanico', soloLogin, consultarMovilPanico) // ✔️ Botón "Consultar" del modal de Pánico
+router.get('/lineasSinAtender', soloLogin, lineasSinAtender)
+router.post('/getPosicionesViajexId', soloLogin, getPosicionesViajexId)
+router.post('/getRecorridoEvento', soloLogin, getRecorridoEvento)   // Recorrido para el modal de Eventos (Viaje_Recorrido)
+router.post('/finalizarViaje', soloLogin, finalizarViaje) // ✔️ Finalizar viaje (NU_FinalizarViaje)
+router.post('/eventoAccion', soloLogin, eventoAccion) // ✔️ Modal de Eventos: Generar / Reporta / Cerrar (Eventos_acciones)
+router.post('/cancelarViaje', soloLogin, cancelarViaje) // ✔️ Anular viaje con motivo (MF_CancelarViaje)
+router.get('/getCuentasCorrientes', soloLogin, getCuentasCorrientes)
+router.post('/getMovilById', soloLogin, getMovilById)
+router.get('/getReporteGlobal', soloLogin, getReporteGlobal) // ✔️ Corregido: removido el punto '.'
+router.get('/getEventos', soloLogin, getEventos)             // ✔️ Registrado getEventos
+router.post('/getViajexId', soloLogin, getViajexId)          // ✔️ Registrado getViajexId
+router.post('/getMovilesAutocomplete', soloLogin, getMovilesAutocomplete) // ✔️ Autocomplete
+router.post('/getAgendados', soloLogin, getAgendados)         // ✔️ Agendados
+router.post('/getConsola', soloLogin, getConsola)             // ✔️ Consola
+router.post('/getMensajesChat', soloLogin, getMensajesChat)   // ✔️ Cuadro de mensajes (minichat: móvil/operador/eventos)
+router.post('/setUltimoVistoConsola', soloLogin, setUltimoVistoConsola) // ✔️ Set ultimo visto consola
+router.post('/getMensajesMovil', soloLogin, getMensajesMovil) // ✔️ Obtener mensajes del móvil
+router.post('/enviarMensaje', soloLogin, enviarMensaje)       // ✔️ Enviar mensaje al móvil
+router.post('/enviarMensajeVariosMoviles', soloLogin, enviarMensajeVariosMoviles) // ✔️ Enviar mensaje a varios móviles (o L/O/T = libres/ocupados/todos)
+router.post('/enviarMensajeWAPasajero', soloLogin, enviarMensajeWAPasajero) // ✔️ Enviar mensaje WA al pasajero (solo viajes de WhatsApp)
+router.post('/asignarMovil', soloLogin, asignarMovil)         // ✔️ Asignar móvil a viaje
+router.get('/ivrConf', requierePermiso('WebPedidos'), ivrConf)                    // ✔️ Configuración de IVR y WhatsApp
+router.post('/ivrConf', requierePermiso('WebPedidos'), ivrConfUpdate)
+router.get('/ivrConf/tv', requierePermiso('WebPedidos'), ivrConfGetTV)
+router.post('/ivrConf/tv', requierePermiso('WebPedidos'), ivrConfUpdateTV)
 
 // Soporte para endpoints legacy de Laravel
-router.post('/getivrconf', ivrConf)
-router.post('/updateivrconf', ivrConfUpdate)
-router.get('/gettv', ivrConfGetTV)
-router.post('/updatetv', ivrConfUpdateTV)
+router.post('/getivrconf', requierePermiso('WebPedidos'), ivrConf)
+router.post('/updateivrconf', requierePermiso('WebPedidos'), ivrConfUpdate)
+router.get('/gettv', requierePermiso('WebPedidos'), ivrConfGetTV)
+router.post('/updatetv', requierePermiso('WebPedidos'), ivrConfUpdateTV)
 
-router.post('/enviarViajesPendientesMsj', enviarViajesPendientesMsj) // ✔️ Enviar viajes pendientes a todos los móviles (F9)
+router.post('/enviarViajesPendientesMsj', soloLogin, enviarViajesPendientesMsj) // ✔️ Enviar viajes pendientes a todos los móviles (F9)
 
 // --- Nuevas Rutas de Pedidos (F1 Modal) ---
-router.get('/pedidos/getPedidosData', pedidosGetPedidosData)
-router.get('/pedidos/checkTel', pedidosCheckTel)
-router.get('/pedidos/checkTelReclamo', pedidosCheckTelReclamo)
-router.get('/pedidos/getCalles', pedidosGetCalles)
-router.post('/pedidos/addViaje', pedidosAddViaje)
-router.post('/pedidos/agendarViaje', pedidosAgendarViaje)
-router.post('/pedidos/addCliente', pedidosAddCliente)
-router.post('/pedidos/updateCliente', pedidosUpdateCliente)
-router.get('/pedidos/calcEstimado', pedidosCalcEstimado)
-router.get('/pedidos/referenciaHistoricaNumero', pedidosReferenciaHistoricaNumero)
-router.post('/pedidos/referenciaHistoricaNumero', pedidosReferenciaHistoricaNumero)
-router.get('/pedidos/referenciaHistoricaEsquina', pedidosReferenciaHistoricaEsquina)
-router.post('/pedidos/referenciaHistoricaEsquina', pedidosReferenciaHistoricaEsquina)
-router.post('/pedidos/recalcularImporteSalud', pedidosRecalcularImporteSalud)
-router.post('/pedidos/logMovCursor', pedidosLogMovCursor)
-router.post('/pedidos/clienteBorrar', pedidosClienteBorrar)
-router.get('/pedidos/getPlaces', pedidosGetPlaces)
-router.post('/pedidos/setPlace', pedidosSetPlace)
+router.get('/pedidos/getPedidosData', requierePermiso('WebPedidos'), pedidosGetPedidosData)
+router.get('/pedidos/checkTel', requierePermiso('WebPedidos'), pedidosCheckTel)
+router.get('/pedidos/checkTelReclamo', requierePermiso('WebPedidos'), pedidosCheckTelReclamo)
+router.get('/pedidos/getCalles', requierePermiso('WebPedidos'), pedidosGetCalles)
+router.post('/pedidos/addViaje', requierePermiso('WebPedidos'), pedidosAddViaje)
+router.post('/pedidos/agendarViaje', requierePermiso('WebPedidos'), pedidosAgendarViaje)
+router.post('/pedidos/addCliente', requierePermiso('WebPedidos'), pedidosAddCliente)
+router.post('/pedidos/updateCliente', requierePermiso('WebPedidos'), pedidosUpdateCliente)
+router.get('/pedidos/calcEstimado', requierePermiso('WebPedidos'), pedidosCalcEstimado)
+router.get('/pedidos/referenciaHistoricaNumero', requierePermiso('WebPedidos'), pedidosReferenciaHistoricaNumero)
+router.post('/pedidos/referenciaHistoricaNumero', requierePermiso('WebPedidos'), pedidosReferenciaHistoricaNumero)
+router.get('/pedidos/referenciaHistoricaEsquina', requierePermiso('WebPedidos'), pedidosReferenciaHistoricaEsquina)
+router.post('/pedidos/referenciaHistoricaEsquina', requierePermiso('WebPedidos'), pedidosReferenciaHistoricaEsquina)
+router.post('/pedidos/recalcularImporteSalud', requierePermiso('WebPedidos'), pedidosRecalcularImporteSalud)
+router.post('/pedidos/logMovCursor', requierePermiso('WebPedidos'), pedidosLogMovCursor)
+router.post('/pedidos/clienteBorrar', requierePermiso('WebPedidos'), pedidosClienteBorrar)
+router.get('/pedidos/getPlaces', requierePermiso('WebPedidos'), pedidosGetPlaces)
+router.post('/pedidos/setPlace', requierePermiso('WebPedidos'), pedidosSetPlace)
 
 module.exports = router

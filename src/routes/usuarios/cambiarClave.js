@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { poolPromise, sql } = require('../../../db');
 const { registrarErrorWeb } = require('../../utils/errorWeb');
+const { registrarSesion } = require('../../utils/logSesion')
 
 // Réplica de Auth\ResetPasswordController@changePassword (POST /cambiar-clave en Laravel).
 // El usuario que cambia la clave es SIEMPRE el logueado: se toma de req.user.userId (JWT),
@@ -53,6 +54,23 @@ module.exports = async (req, res) => {
             .input('user_id', sql.Int, userId)
             .input('password', sql.VarChar(255), hash)
             .execute('CFR_Usuarios_CambiarClave');
+
+        // TODO: registrar el cambio de clave en CFR_LogsUsuario (evento 'CAMBIO_CLAVE'), igual
+        // que el caso del administrador en usuarios/actualizar.js. Diferencias para este caso:
+        // quien cambia la clave es el mismo usuario logueado, y el detalle tiene que dejar claro
+        // que la cambió él mismo. Que un fallo al registrar no haga fallar la respuesta.
+
+            try {
+                await registrarSesion(pool, req, {
+                    evento: 'CAMBIO_CLAVE',
+                    nroOperador: userId,
+                    nroPuesto: req.user.nro_puesto,
+                    nroMesas: req.user.nro_mesas,
+                    detalle: `Cambiada por el propio Usuario`,
+                });
+            } catch (logErr) {
+                console.error('Error al registrar el cambio de clave:', logErr);
+            }
 
         // El front hace el logout y redirige al login ("Una vez cambiada será redirigido al login")
         res.json({ success: true });
