@@ -11,7 +11,11 @@ module.exports = async (req, res) => {
         
         // Contexto del operador autenticado
         const nroFlota = user.nro_flota !== undefined && user.nro_flota !== null ? parseInt(user.nro_flota, 10) : 0;
-        const choferViaja = body.choferViaja !== undefined ? parseInt(body.choferViaja, 10) : 1;
+        // Laravel lee config('configuracion.CHOFERVIAJA'); con 0/2 el SP incluye MOVILES.nro_flota
+        // (lo usa el tooltip de la grilla). Antes el default era 1 y la columna nunca venía.
+        const choferViaja = body.choferViaja !== undefined
+            ? parseInt(body.choferViaja, 10)
+            : (parseInt(process.env.CONF_CHOFERVIAJA, 10) || 0);
         let filtroMesas = '';
         if (user.nro_mesas && user.nro_mesas !== '0') {
             const mesas = String(user.nro_mesas).split('');
