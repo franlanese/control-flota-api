@@ -2,7 +2,7 @@ const { poolPromise, sql } = require('../../../db');
 const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 // Réplica de AgendadosController@getProximos (Laravel): dropdown "Agendados próximos a vencer"
-// de la barra superior. TOP 5 por fec_fin_vigencia en los próximos 30 días, excluye los de
+// de la barra superior. TOP 10 (Laravel: 5) por fec_fin_vigencia en los próximos 30 días, excluye los de
 // única vez (opcion_agenda = 1) y filtra por la flota del usuario si tiene una.
 module.exports = async (req, res) => {
     try {

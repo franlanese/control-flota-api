@@ -6,7 +6,9 @@ module.exports = async (req, res) => {
         const user = req.user || {};
 
         const filtro = body.filtro !== undefined ? parseInt(body.filtro, 10) : 0;
-        const filtroCalle = body.filtroCalle !== undefined ? parseInt(body.filtroCalle, 10) : 1;
+        // El panel de Flota manda `filtro_calle` (mismo nombre que Laravel); MapaPage manda `filtroCalle`.
+        const filtroCalleRaw = body.filtro_calle !== undefined ? body.filtro_calle : body.filtroCalle;
+        const filtroCalle = filtroCalleRaw !== undefined ? parseInt(filtroCalleRaw, 10) : 1;
         
         // Contexto del operador autenticado
         const nroFlota = user.nro_flota !== undefined && user.nro_flota !== null ? parseInt(user.nro_flota, 10) : 0;
