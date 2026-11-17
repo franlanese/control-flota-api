@@ -17,6 +17,10 @@
 # como respaldo. Para volver atrás: restaurar el backup de nginx y `pm2 start 0 1` (root).
 set -euo pipefail
 
+# Los comandos "como deploy" heredan la carpeta actual. Si es /root (o cualquiera donde deploy no
+# puede entrar), pm2 no logra levantar su daemon: "spawn /usr/bin/node EACCES".
+cd /
+
 BASE=/srv/control-flota
 FRONT_STG_OLD=/home/React/control-flota-react
 FRONT_PRD_OLD=/home/React/control-flota-react-v1
@@ -32,7 +36,18 @@ paso() { echo; echo "=== $* ==="; }
 como_deploy() { sudo -u deploy -H "$@"; }
 
 [[ $EUID -eq 0 ]] || { echo "Correlo con sudo"; exit 1; }
-[[ ! -e $BASE ]] || { echo "$BASE ya existe: la migración ya se corrió o quedó a medias. Revisalo antes de seguir."; exit 1; }
+
+# --continuar: retoma desde el paso 6 cuando 1-5 ya se hicieron (usa el release inicial existente).
+MODO=completa
+if [[ ${1:-} == --continuar ]]; then
+    MODO=continuar
+    [[ -L $BASE/api/staging/current && -L $BASE/api/prod/current ]] || { echo "No hay releases en $BASE: corré la migración sin --continuar"; exit 1; }
+    RID=$(basename "$(readlink "$BASE/api/staging/current")")
+    [[ $RID == "$(basename "$(readlink "$BASE/api/prod/current")")" ]] || { echo "staging y prod apuntan a releases distintos; revisar a mano"; exit 1; }
+    echo "Modo --continuar: retomo desde el paso 6 con el release $RID"
+else
+    [[ ! -e $BASE ]] || { echo "$BASE ya existe: la migración ya se corrió o quedó a medias. Para retomar desde el paso 6: sudo bash $0 --continuar"; exit 1; }
+fi
 [[ -f $FLOTA_SH_SRC ]] || { echo "Falta $FLOTA_SH_SRC (subilo junto con este script)"; exit 1; }
 for d in $FRONT_STG_OLD $FRONT_PRD_OLD $API_STG_OLD $API_PRD_OLD; do [[ -d $d ]] || { echo "No existe $d"; exit 1; }; done
 
@@ -44,6 +59,8 @@ done
 echo "Esperado: id $PM2_ROOT_STG = staging ($API_STG_OLD), id $PM2_ROOT_PRD = prod ($API_PRD_OLD)."
 read -rp "¿Coincide? Escribí 'si' para seguir: " r
 [[ $r == si ]] || { echo "Cancelado, no se tocó nada."; exit 1; }
+
+if [[ $MODO == completa ]]; then
 
 paso "1. Estructura en $BASE"
 for app in api front; do
@@ -113,6 +130,8 @@ for p in 8010 1000; do
     echo "  :$p OK ($v)"
 done
 
+fi # fin de los pasos 1-5 (se saltean con --continuar)
+
 paso "6. APIs: proceso viejo (root) -> proceso nuevo (deploy). CORTE de unos segundos."
 esperar_health() { # $1=puerto. El código actual todavía no tiene /health: basta con que conteste HTTP.
     local i r
@@ -127,7 +146,7 @@ cambiar_api() { # $1=id root $2=entorno $3=nombre nuevo $4=puerto
     local dir=$BASE/api/$2
     echo "  Parando pm2 root id $1 ($2)..."
     pm2 stop "$1" >/dev/null
-    if como_deploy pm2 start "$dir/current/index.js" --name "$3" --cwd "$dir/current" >/dev/null && esperar_health "$4"; then
+    if como_deploy pm2 start "$dir/current/index.js" --name "$3" --cwd "$dir/current" && esperar_health "$4"; then
         echo "  $2 OK: $3 en :$4"
     else
         echo "  $2 FALLÓ: vuelvo al proceso viejo"

@@ -17,6 +17,8 @@
 set -euo pipefail
 
 BASE=/srv/control-flota
+# pm2 hereda la carpeta actual: si no es accesible para deploy, no puede levantar su daemon (EACCES).
+cd "$BASE"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 log() { echo "[$(date +%H:%M:%S)] $*"; }
