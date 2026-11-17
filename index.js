@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -153,6 +154,59 @@ montar('/api/parametros', authMiddleware, parametrosRoutes);
 // Rutas protegidas de Mensajería interna (modal global, F3)
 montar('/api/mensajeria', authMiddleware, mensajeriaRoutes);
 
+// Rutas protegidas de Móvil Posible (qué móviles pasaron por un punto en una fecha y hora)
+montar('/api/movilposible', authMiddleware, require('./src/routes/movilposible'));
+
+// CHEQUEO DE HEALTH (decisión 0011)
+// Readiness: 'ok' significa que el API responde Y que SQL Server contesta. El monitor que lo
+// consume alerta ante un 503 (no reinicia el proceso), así que una caída de la base avisa sin
+// provocar reinicios en loop.
+
+// Revisión desplegada. El deploy escribe el archivo REVISION; se busca primero dentro del API y
+// después en la carpeta de arriba, y se loguea cuál se usó para que un 'dev' en producción se note.
+let REVISION = 'dev';
+for (const archivo of [path.join(__dirname, 'REVISION'), path.join(__dirname, '..', 'REVISION')]) {
+    try {
+        REVISION = fs.readFileSync(archivo, 'utf8').trim() || 'dev';
+        console.log(`Revisión ${REVISION} (leída de ${archivo})`);
+        break;
+    } catch { /* probar la siguiente ubicación */ }
+}
+if (REVISION === 'dev') console.warn('No se encontró el archivo REVISION: /health informa revision "dev"');
+
+// Más corto que el timeout típico de un monitor (5-10 s): si la base está colgada, el monitor
+// tiene que recibir un 503 claro y no un "sin respuesta".
+const HEALTH_DB_TIMEOUT_MS = 3000;
+
+const { poolPromise } = require('./db');
+
+// Corre `promesa` con un límite de tiempo; si vence, rechaza. Cubre tanto una query colgada como
+// el pool esperando una conexión libre (que en mssql puede tardar mucho más).
+const conTimeout = (promesa, ms) => {
+    let timer;
+    const limite = new Promise((_, rechazar) => {
+        timer = setTimeout(() => rechazar(new Error(`timeout de ${ms} ms`)), ms);
+    });
+    return Promise.race([promesa, limite]).finally(() => clearTimeout(timer));
+};
+
+const health = async (_req, res) => {
+    // Nunca cachear: un proxy no puede devolverle al monitor un 'ok' viejo.
+    res.set('Cache-Control', 'no-store');
+    try {
+        await conTimeout(poolPromise.then(pool => pool.request().query('SELECT 1 AS ok')), HEALTH_DB_TIMEOUT_MS);
+        res.json({ status: 'ok', revision: REVISION, db: 'ok' });
+    } catch (err) {
+        // El detalle va al log del servidor, no a la respuesta: el endpoint es público.
+        console.error('Health check: la base no responde:', err.message);
+        res.status(503).json({ status: 'error', revision: REVISION, db: 'down' });
+    }
+};
+
+// Pública (sin authMiddleware): un monitor no tiene token. También bajo /api/ para que sea
+// accesible a través de nginx si sólo reenvía /api/ al Node.
+app.get(['/health', '/api/health'], health);
+
 // Manejador global de errores, equivalente a app/Exceptions/Handler.php de Laravel: registra el
 // error en EVENTOS_ERRORWEB (sólo si es de base de datos) y responde 500.
 // Tiene que ir DESPUÉS de todas las rutas y llevar los 4 parámetros: así Express lo reconoce como
@@ -169,5 +223,6 @@ app.use(async (err, req, res, next) => {
 verificarPermisosRutas(montajes);
 
 app.listen(PORT, () => {
+    if (process.send) process.send('ready');
     console.log(`Servidor de API corriendo en http://localhost:${PORT}`)
 })

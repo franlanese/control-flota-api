@@ -127,7 +127,7 @@ module.exports = async (req, res) => {
 
         const token = jwt.sign(
             tokenPayload,
-            process.env.JWT_SECRET || 'control_flota_secret_key_2026',
+            process.env.JWT_SECRET,
             { expiresIn: '12h' } // Expira en 12 horas (típico turno de despacho)
         );
 
