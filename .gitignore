@@ -35,3 +35,7 @@ Thumbs.db
 .eslintcache
 .parcel-cache
 .next/
+
+REVISION
+# Fotos subidas por los usuarios: son datos del servidor, no codigo (viven en shared/ en el VPS)
+public/fotos/

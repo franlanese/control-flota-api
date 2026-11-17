@@ -1,0 +1,79 @@
+# CI + deploy a STAGING en cada push a main. Producción NO se toca acá: se promueve a mano con
+# promote.yml, que copia a prod exactamente el mismo release que quedó probado en staging.
+name: Deploy staging (API)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: flota-api-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # ---- CI ----
+      # Sólo dependencias de producción: este node_modules es el que viaja al servidor (todas son JS puro).
+      - name: Instalar dependencias
+        run: npm ci --omit=dev
+
+      - name: Chequeo de sintaxis
+        run: find . -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+
+      # ---- Artefacto ----
+      - name: Armar release
+        run: |
+          RID="$(date -u +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+          echo "RID=$RID" >> "$GITHUB_ENV"
+          echo "$RID" > REVISION
+          tar -czf "$RUNNER_TEMP/release.tgz" index.js db.js package.json package-lock.json REVISION src node_modules
+
+      # ---- CD ----
+      - name: Configurar SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host flota
+            HostName $SSH_HOST
+            Port $SSH_PORT
+            User $SSH_USER
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            BatchMode yes
+            ServerAliveInterval 30
+          EOF
+
+      - name: Actualizar script de deploy en el servidor
+        run: |
+          scp deploy/flota.sh flota:/srv/control-flota/bin/flota.sh.new
+          ssh flota "sed -i 's/\r\$//' /srv/control-flota/bin/flota.sh.new && chmod 755 /srv/control-flota/bin/flota.sh.new && mv -f /srv/control-flota/bin/flota.sh.new /srv/control-flota/bin/flota.sh"
+
+      - name: Subir release
+        run: ssh flota "mkdir -p /srv/control-flota/api/staging/releases/$RID && tar -xzf - -C /srv/control-flota/api/staging/releases/$RID" < "$RUNNER_TEMP/release.tgz"
+
+      - name: Activar en staging (prueba previa + healthcheck + rollback automático)
+        run: ssh flota "/srv/control-flota/bin/flota.sh activar api staging $RID"

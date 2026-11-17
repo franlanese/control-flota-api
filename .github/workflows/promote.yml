@@ -1,0 +1,62 @@
+# Promueve a PRODUCCIÓN el release que está activo en staging (mismo artefacto, no se recompila).
+# Se corre a mano: Actions -> "Promover a producción (API)" -> Run workflow.
+name: Promover a producción (API)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sps_listos:
+        description: "Confirmo que corrí en la base Viaja (prod) todos los SPs nuevos o cambiados que usa esta versión"
+        type: boolean
+        required: true
+        default: false
+
+concurrency:
+  group: flota-api-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  promover:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      # El artefacto es idéntico, pero la base no: staging usa Demo y prod usa Viaja, y los SPs CFR_*
+      # se corren a mano en cada una. /health no lo detecta (sólo hace SELECT 1).
+      - name: Confirmación de la base de datos
+        if: ${{ !inputs.sps_listos }}
+        run: |
+          echo "::error::Marcá la casilla recién después de correr los SPs en Viaja. No se promovió nada."
+          exit 1
+
+      - name: Configurar SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host flota
+            HostName $SSH_HOST
+            Port $SSH_PORT
+            User $SSH_USER
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            BatchMode yes
+            ServerAliveInterval 30
+          EOF
+
+      - name: Qué se va a promover
+        run: ssh flota "/srv/control-flota/bin/flota.sh estado"
+
+      - name: Promover staging -> prod (prueba previa + healthcheck + rollback automático)
+        run: ssh flota "/srv/control-flota/bin/flota.sh promover api"
