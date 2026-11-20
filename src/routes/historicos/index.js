@@ -11,5 +11,7 @@ router.post('/lista', requierePermiso('WebHistoricos', 'WebSalud'), lista)
 // pide WebMensajeria y le daría 403 a quien solo tiene Históricos).
 router.get('/telefonistas', requierePermiso('WebHistoricos', 'WebSalud'), telefonistas)
 router.post('/cambiarEstado', requierePermiso('WebHistoricos', 'WebSalud'), cambiarEstado)
+// Laravel: /getRecorridos (grupo WebHistoricos) y /getRecorridosSalud (WebSalud), misma consulta.
+router.get('/recorrido', requierePermiso('WebHistoricos', 'WebSalud'), require('./recorrido'))
 
 module.exports = router
