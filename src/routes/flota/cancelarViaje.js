@@ -19,6 +19,21 @@ module.exports = async (req, res) => {
         }
 
         const pool = await poolPromise;
+
+        // Regla nueva (no existía en Laravel; MF_CancelarViaje no mira el estado): un viaje
+        // iniciado no se anula. Se valida acá además de en el menú del panel, porque la pantalla
+        // puede estar desactualizada. Ver docs/decisions/0015-anular-iniciado-y-busqueda-telefonista.md.
+        const estado = await pool.request()
+            .input('nro_viaje', sql.Int, parseInt(nroViaje, 10))
+            .execute('dbo.CFR_Viajes_Estado');
+        const viaje = estado.recordset[0];
+        if (!viaje) {
+            return res.status(409).json({ success: false, error: 'El viaje ya no está activo' });
+        }
+        if (viaje.estado_respecto_cliente === 'I') {
+            return res.status(409).json({ success: false, error: 'No se puede anular un viaje iniciado' });
+        }
+
         await pool.request()
             .input('Nro_Viaje', sql.Int, parseInt(nroViaje, 10))
             .input('Cod_motivo_cancelacion', sql.Int, parseInt(motivo, 10))

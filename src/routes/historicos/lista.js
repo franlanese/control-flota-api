@@ -54,6 +54,12 @@ module.exports = async (req, res) => {
         const valor = tieneValor ? String(valorBusqueda).trim() : null;
         const valorInt = tieneValor ? parseInt(valor, 10) : null;
 
+        // Telefonista: el front manda el número del usuario elegido en la lista.
+        const porTelefonista = dynamicParam === 'nro_usuario_telefonista' && tieneValor;
+        if (porTelefonista && !/^\d+$/.test(valor)) {
+            return res.status(400).json({ success: false, error: 'Elegí un telefonista de la lista' });
+        }
+
         const pool = await poolPromise;
         const request = pool.request()
             .input('FechaDesde', sql.DateTime, new Date(fechaDesde))
@@ -75,7 +81,11 @@ module.exports = async (req, res) => {
             .input('FormaPago', sql.VarChar(3), formaPago || null);
 
         const result = await request.execute('VIAJA_ViajesFiltrados_Tildes3');
-        res.json({ success: true, data: result.recordset });
+        let data = result.recordset;
+        // El SP filtra el telefonista con LIKE '%n%' (el usuario 1 trae también 10, 11, 100...).
+        // Se deja solo el número exacto. Ver docs/decisions/0015-anular-iniciado-y-busqueda-telefonista.md.
+        if (porTelefonista) data = data.filter(r => Number(r.nro_usuario_telefonista) === valorInt);
+        res.json({ success: true, data });
     } catch (err) {
         await registrarErrorWeb(err, req);
         console.error('Error en historicos/lista:', err);
