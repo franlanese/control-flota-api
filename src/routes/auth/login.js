@@ -87,7 +87,7 @@ module.exports = async (req, res) => {
             .input('NroPuesto', sql.Int, puestoInput)
             .input('NroMesas', sql.VarChar(50), nroMesas)
             .input('Version', sql.VarChar(50), versionApp)
-            .query('UPDATE NuUsuarios SET nro_puesto = @NroPuesto, nro_mesas = @NroMesas, ultima_conexion = GETDATE(), version = @Version WHERE user_id = @UserId');
+            .query('UPDATE NuUsuarios SET nro_puesto = @NroPuesto, nro_mesas = @NroMesas, ultima_conexion = CONVERT(varchar(23), GETDATE(), 121), version = @Version WHERE user_id = @UserId');
 
         // 6. Registrar el logsin en CFR_LogsUsuario (usuario, puesto, IP, navegador, etc.).
         // Sólo se registran los logins exitosos. Va en su propio try/catch: un fallo de

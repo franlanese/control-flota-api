@@ -4,7 +4,8 @@ const { registrarErrorWeb } = require('../../utils/errorWeb');
 
 module.exports = async (req, res) => {
     try {
-        const { usuario, nombre, password, nivel, nro_puesto } = req.body;
+        // nro_puesto no se recibe: lo asigna el login, no el ABM (decisión 0018).
+        const { usuario, nombre, password, nivel } = req.body;
 
         if (!usuario || !nombre || !password || !nivel) {
             return res.status(400).json({ success: false, error: 'usuario, nombre, password y nivel son obligatorios' });
@@ -21,7 +22,6 @@ module.exports = async (req, res) => {
             .input('nombre', sql.VarChar(50), nombre)
             .input('password', sql.VarChar(255), hash)
             .input('nivel', sql.Int, parseInt(nivel))
-            .input('nro_puesto', sql.Int, nro_puesto ? parseInt(nro_puesto) : null)
             .execute('CFR_Usuarios_Crear');
 
         res.json({ success: true });

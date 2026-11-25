@@ -9,5 +9,6 @@ const uploadLogo = makeFixedUploader('empresa', 'logo');
 router.get('/', requierePermiso('WebConfig'), require('./obtener'));      // ✔️ Réplica de ConfigController@index
 router.post('/', requierePermiso('WebConfig'), require('./actualizar'));  // ✔️ Réplica de ConfigController@setValue
 router.post('/logo', requierePermiso('WebConfig'), uploadLogo.single('logo'), require('./logo')); // Subida del logo (local)
+router.post('/localidades', requierePermiso('WebConfig'), require('./localidadCrear')); // Herramienta "Cargar localidad" (docs/decisions/0017)
 
 module.exports = router;
